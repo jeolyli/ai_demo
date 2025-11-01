@@ -1,0 +1,39 @@
+import requests, json, os
+
+ARK_API_KEY = os.getenv("ARK_API_KEY")          # 把 key 配到环境变量
+BASE_URL    = "https://ark.cn-beijing.volces.com/api/v3"
+headers     = {"Authorization": f"Bearer {ARK_API_KEY}",
+               "Content-Type": "application/json"}
+
+# ① 图→描述
+def img2desc(image_url):
+    payload = {
+        "model": "doubao-seed-1-6-251015",          # 也可换成 doubao-vision 模型
+        "messages": [
+            {"role": "user",
+             "content": f"Describe the main trends and key data in the chart below in about 60 English words, suitable for IELTS Writing Task 1:\n{image_url}"}
+        ],
+        "temperature": 0.3
+    }
+    resp = requests.post(f"{BASE_URL}/chat/completions", headers=headers, json=payload)
+    return resp.json()["choices"][0]["message"]["content"]
+
+# ② 描述→150 词作文
+def desc2essay(desc):
+    payload = {
+        "model": "deepseek-v3-250324",
+        "messages": [
+            {"role": "user",
+             "content": f"Expand the following notes into a 150-word IELTS Task 1 report, including overview and data details:\n{desc}"}
+        ],
+        "temperature": 0.5
+    }
+    resp = requests.post(f"{BASE_URL}/chat/completions", headers=headers, json=payload)
+    return resp.json()["choices"][0]["message"]["content"]
+
+if __name__ == "__main__":
+    chart_url = "https://your-domain.com/bar_chart.png"
+    desc = img2desc(chart_url)
+    essay = desc2essay(desc)
+    print("----- 150 词作文 -----")
+    print(essay)
